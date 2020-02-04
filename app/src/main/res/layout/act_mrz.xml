@@ -43,6 +43,17 @@
 			android:layout_height="0dp"
 			android:layout_weight="1" />
 
+		<ImageView
+			android:id="@+id/icao_dg3_imageview"
+			android:layout_width="240dp"
+			android:layout_height="320dp"
+			tools:ignore="ContentDescription" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
 		<TextView
 			android:id="@+id/icao_textview"
 			android:layout_width="wrap_content"
@@ -52,6 +63,8 @@
 			android:layout_width="0dp"
 			android:layout_height="0dp"
 			android:layout_weight="1" />
+
+
 	</LinearLayout>
 
 	<!-- *************************************************************************************** -->
@@ -92,6 +105,61 @@
 			android:id="@+id/open_epassport_buton"
 			style="@style/MRZActivityButton"
 			android:text="@string/open_epassport" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
+	</LinearLayout>
+
+	<!-- *************************************************************************************** -->
+	<!-- MRTD reading process -->
+	<!-- *************************************************************************************** -->
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="25dp"
+		android:orientation="horizontal">
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
+		<Switch
+			android:id="@+id/switchPaceKey"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/PACE_Key_switch_label"
+			android:textOn="@string/PACE_Key_switch_on"
+			android:textOff="@string/PACE_Key_switch_off"
+			android:showText="true"/>
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
+		<CheckBox
+			android:id="@+id/checkBoxChipAuthnetication"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/chip_auth_checkbox_label" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
+		<CheckBox
+			android:id="@+id/checkBoxTerminalAuthentication"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/terminal_auth_checkbox_label" />
 
 		<View
 			android:layout_width="0dp"

@@ -13,7 +13,7 @@ import android.os.Bundle;
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.face.FaceEngine;
 import com.credenceid.sdkapp.util.BitmapUtils;
-import com.credenceid.util.FileUtils;
+import com.credenceid.sdkapp.util.FileUtils;
 
 import java.util.ArrayList;
 

@@ -3,11 +3,17 @@ package com.credenceid.sdkapp;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -64,10 +70,14 @@ public class MRZActivity
 	 * --------------------------------------------------------------------------------------------
 	 */
 	private TextView mStatusTextView;
-	private ImageView mICAOImageView;
+	private ImageView mICAOFaceImageView;
+	private ImageView mICAOFingerImageView;
 	private TextView mICAOTextView;
 	private Button mOpenMRZButton;
 	private Button mOpenRFButton;
+	private Switch mSwPaceKey;
+	private CheckBox mCbChipAuthentication;
+	private CheckBox mCbTerminalAuthentication;
 	/* This button should only be enabled if three conditions are all met.
 	 * 1. EPassport is open.
 	 * 2. MRZ has been read and document number, D.O.B., and D.O.E. have been captured
@@ -86,6 +96,7 @@ public class MRZActivity
 	private String mDocNumber = "";
 	private String mDateOfBirth = "";
 	private String mDateOfExpiry = "";
+	private String mIdDocumentKey = "";
 
 	/* Callback invoked each time MRZ reader is able to read MRZ text from document. */
 	private OnMRZReaderListener mOnMRZReadListener = (ResultCode resultCode,
@@ -106,6 +117,7 @@ public class MRZActivity
 			 * class to see the different pieces of information MRZ contains and their respective
 			 * indexes.
 			 */
+			mIdDocumentKey = data;
 			final String[] splitData = parsedData.split("\r\n");
 			if (splitData.length < mMRZ_DATA_COUNT) {
 				mStatusTextView.setText(getString(R.string.mrz_failed_reswipe));
@@ -242,12 +254,16 @@ public class MRZActivity
 
 		mStatusTextView = findViewById(R.id.status_textview);
 
-		mICAOImageView = findViewById(R.id.icao_dg2_imageview);
+		mICAOFaceImageView = findViewById(R.id.icao_dg2_imageview);
+		mICAOFingerImageView = findViewById(R.id.icao_dg3_imageview);
 		mICAOTextView = findViewById(R.id.icao_textview);
 
 		mOpenMRZButton = findViewById(R.id.open_mrz_button);
 		mOpenRFButton = findViewById(R.id.open_epassport_buton);
 		mReadICAOButton = findViewById(R.id.read_icao_button);
+		mCbChipAuthentication = findViewById(R.id.checkBoxChipAuthnetication);
+		mCbTerminalAuthentication = findViewById(R.id.checkBoxTerminalAuthentication);
+		mSwPaceKey = findViewById(R.id.switchPaceKey);
 	}
 
 	/* Configure all objects in layout file, set up listeners, views, etc. */
@@ -258,15 +274,18 @@ public class MRZActivity
 		mOpenMRZButton.setText(getString(R.string.open_mrz));
 		mOpenMRZButton.setOnClickListener((View v) -> {
 			/* Based on current state of MRZ reader take appropriate action. */
-			if (!mIsMRZOpen)
+			if (!mIsMRZOpen) {
 				openMRZReader();
+				mICAOTextView.setText("");
+				mICAOFaceImageView.setImageBitmap(null);
+				mICAOFingerImageView.setImageBitmap(null);
+			}
 			else {
 				App.BioManager.closeMRZ();
 				App.BioManager.ePassportCloseCommand();
 			}
 		});
 
-		mOpenRFButton.setEnabled(false);
 		mOpenRFButton.setText(getString(R.string.open_epassport));
 		mOpenRFButton.setOnClickListener((View v) -> {
 			/* Based on current state of EPassport reader take appropriate action. */
@@ -275,10 +294,15 @@ public class MRZActivity
 			else App.BioManager.ePassportCloseCommand();
 		});
 
-		mReadICAOButton.setEnabled(false);
-		mReadICAOButton.setOnClickListener((View v) ->
-				this.readICAODocument(mDateOfBirth, mDocNumber, mDateOfExpiry)
-		);
+		mReadICAOButton.setEnabled(mIsDocPresentOnEPassport);
+		mReadICAOButton.setOnClickListener((View v) -> {
+			if(mSwPaceKey.isChecked()) {
+				displayCanCodedialogBox();
+			} else {
+				readICAODocument(mIdDocumentKey);
+			}
+
+		});
 	}
 
 	/* --------------------------------------------------------------------------------------------
@@ -341,7 +365,6 @@ public class MRZActivity
 					mStatusTextView.setText(getString(R.string.mrz_closed));
 					mOpenMRZButton.setText(getString(R.string.open_mrz));
 
-					mOpenRFButton.setEnabled(false);
 					mOpenRFButton.setText(getString(R.string.open_epassport));
 
 				} else if (INTERMEDIATE == resultCode) {
@@ -377,6 +400,8 @@ public class MRZActivity
 					 * close. To achieve this we change flag which controls what action button takes.
 					 */
 					mIsEPassportOpen = true;
+
+					mReadICAOButton.setEnabled(true);
 
 					mOpenRFButton.setText(getString(R.string.close_epassport));
 					mStatusTextView.setText(getString(R.string.epassport_opened));
@@ -428,40 +453,30 @@ public class MRZActivity
 	@SuppressLint("SetTextI18n")
 	@SuppressWarnings("SpellCheckingInspection")
 	private void
-	readICAODocument(String dateOfBirth,
-					 String documentNumber,
-					 String dateOfExpiry) {
+	readICAODocument(String mrz) {
 
-		mICAOImageView.setImageBitmap(null);
+		mICAOTextView.setText("");
+		mICAOFaceImageView.setImageBitmap(null);
+		mICAOFingerImageView.setImageBitmap(null);
 
-		/* If any one of three parameters is bad then do not proceed with document reading. */
-		if (null == dateOfBirth || dateOfBirth.isEmpty()) {
-			Log.w(TAG, "DateOfBirth parameter INVALID, will not read ICAO document.");
+		if (null == mrz || mrz.isEmpty()) {
+			Log.w(TAG, "MRZ parameter INVALID, will not read ICAO document.");
 			Toast.makeText(this,
-					"DateOfBirth parameter INVALID, will not read ICAO document.",
+					"MRZ parameter INVALID, will not read ICAO document.",
 					Toast.LENGTH_LONG).show();
 			return;
 		}
-		if (null == documentNumber || documentNumber.isEmpty()) {
-			Log.w(TAG, "DocumentNumber parameter INVALID, will not read ICAO document.");
-			Toast.makeText(this,
-					"DocumentNumber parameter INVALID, will not read ICAO document.",
-					Toast.LENGTH_LONG).show();
-			return;
-		}
-		if (null == dateOfExpiry || dateOfExpiry.isEmpty()) {
-			Log.w(TAG, "DateOfExpiry parameter INVALID, will not read ICAO document.");
-			Toast.makeText(this,
-					"DateOfExpiry parameter INVALID, will not read ICAO document.",
-					Toast.LENGTH_LONG).show();
-			return;
-		}
+
+		Log.d(TAG, "ID Doc Key = "+mIdDocumentKey);
 
 		/* Disable button so user does not initialize another readICAO document API call. */
 		mReadICAOButton.setEnabled(false);
 		mStatusTextView.setText(getString(R.string.reading));
 
-		App.BioManager.readICAODocument(dateOfBirth, documentNumber, dateOfExpiry,
+		App.BioManager.readICAODocument(mrz,
+				mSwPaceKey.isChecked(),
+				mCbChipAuthentication.isChecked(),
+				mCbTerminalAuthentication.isChecked(),
 				(Biometrics.ResultCode resultCode,
 				 ICAOReadIntermediateCode stage,
 				 String hint,
@@ -492,18 +507,33 @@ public class MRZActivity
 						}
 
 					} else if (ICAOReadIntermediateCode.DG1 == stage) {
+						Log.d(TAG, "DG1: Info received - resultCode = " + resultCode);
 						if (OK == resultCode)
-							mICAOTextView.setText(data.DG1.toString());
+							mICAOTextView.setText("DG1:\n" + data.DG1.toString());
 
 					} else if (ICAOReadIntermediateCode.DG2 == stage) {
+						Log.d(TAG, "DG2: Info received - resultCode = " + resultCode);
 						if (OK == resultCode) {
-							mICAOTextView.setText(data.DG2.toString());
-							mICAOImageView.setImageBitmap(data.DG2.getFaceImage());
+							mICAOTextView.append("\nDG2:\n" + data.DG2.toString());
+							mICAOFaceImageView.setImageBitmap(data.DG2.getFaceImage());
 						}
 
 					} else if (ICAOReadIntermediateCode.DG3 == stage) {
-						if (OK == resultCode)
-							mICAOTextView.setText(data.DG3.toString());
+						Log.d(TAG, "DG3: Info received - resultCode = " + resultCode);
+						if (OK == resultCode) {
+							if (data.DG3.getFingers().size() > 0) {
+								Log.d(TAG, "DG3 File = " + data.DG3.getFingers().toString());
+								mICAOTextView.append("DG3:\n"
+										+ data.DG3.getFingers().get(0).getImageHeight()
+								+ " x "
+								+ data.DG3.getFingers().get(0).getImageWidth()
+								+ " Image");
+								//mICAOTextView.append("\nDG3: \nFinger : " + data.DG3.getFingers().get(0).getPosition());
+								mICAOFingerImageView.setImageBitmap(data.DG3.getFingers().get(0).getBitmap()); ;
+							} else {
+								mICAOTextView.append("\nDG3: Parsing Finger info failure\n");
+							}
+						}
 
 					} else if (ICAOReadIntermediateCode.DG7 == stage) {
 						if (OK == resultCode)
@@ -531,5 +561,34 @@ public class MRZActivity
 								&& mIsDocPresentOnEPassport);
 					}
 				});
+	}
+
+	void displayCanCodedialogBox(){
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Title");
+
+		// Set up the input
+		final EditText input = new EditText(this);
+
+		// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+		input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+		builder.setView(input);
+
+		// Set up the buttons
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				mIdDocumentKey = input.getText().toString();
+				readICAODocument(mIdDocumentKey);
+			}
+		});
+		builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.cancel();
+			}
+		});
+
+		builder.show();
 	}
 }

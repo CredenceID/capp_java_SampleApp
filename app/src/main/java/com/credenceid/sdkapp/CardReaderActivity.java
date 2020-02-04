@@ -17,7 +17,7 @@ import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.Biometrics.CloseReasonCode;
 import com.credenceid.biometrics.Biometrics.ResultCode;
 import com.credenceid.biometrics.CardCommandResponse;
-import com.credenceid.util.HexUtils;
+import com.util.HexUtils;
 
 import java.util.Locale;
 
