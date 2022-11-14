@@ -36,7 +36,7 @@
 			android:layout_height="wrap_content">
 
 			<ImageView
-				android:id="@+id/fingerOneImageView"
+				android:id="@+id/finger_one_imageview"
 				android:layout_width="@dimen/fingerprint_width"
 				android:layout_height="@dimen/fingerprint_height"
 				android:background="@drawable/image_border_on"
@@ -48,7 +48,7 @@
 				android:id="@+id/fingerprint_one_label"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_below="@id/fingerOneImageView"
+				android:layout_below="@id/finger_one_imageview"
 				android:layout_centerInParent="true"
 				android:layout_marginTop="5dp"
 				android:text="@string/fingerprint_one_imageview_label"
@@ -70,7 +70,7 @@
 			android:layout_height="wrap_content">
 
 			<ImageView
-				android:id="@+id/fingerTwoImageView"
+				android:id="@+id/finger_two_imageview"
 				android:layout_width="@dimen/fingerprint_width"
 				android:layout_height="@dimen/fingerprint_height"
 				android:background="@drawable/image_border_off"
@@ -81,7 +81,7 @@
 			<TextView
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_below="@id/fingerTwoImageView"
+				android:layout_below="@id/finger_two_imageview"
 				android:layout_centerInParent="true"
 				android:layout_marginTop="5dp"
 				android:text="@string/fingerprint_two_imageview_label"
@@ -112,9 +112,10 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/openCloseBtn"
+			android:id="@+id/open_close_button"
 			style="@style/PageButton"
-			android:text="@string/open" />
+			android:text="@string/open"
+			android:layout_weight="1" />
 
 		<View
 			android:layout_width="0dp"
@@ -122,9 +123,10 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/captureBtn"
+			android:id="@+id/capture_button"
 			style="@style/PageButton"
-			android:text="@string/capture" />
+			android:text="@string/capture"
+			android:layout_weight="1" />
 
 		<View
 			android:layout_width="0dp"
@@ -132,9 +134,10 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/matchBtn"
+			android:id="@+id/match_button"
 			style="@style/PageButton"
-			android:text="@string/match" />
+			android:text="@string/match"
+			android:layout_weight="1" />
 
 		<View
 			android:layout_width="0dp"
@@ -144,7 +147,7 @@
 	</LinearLayout>
 
 	<TextView
-		android:id="@+id/fpStatusTextView"
+		android:id="@+id/status_textview"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_marginTop="20dp"
@@ -153,7 +156,7 @@
 		android:textSize="18sp" />
 
 	<TextView
-		android:id="@+id/infoTextView"
+		android:id="@+id/fingeprint_info_textview"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_marginTop="20dp"

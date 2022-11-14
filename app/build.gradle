@@ -9,12 +9,7 @@ android {
 	defaultConfig {
 		applicationId "com.credenceid.sdkapp"
 		minSdkVersion 19
-<<<<<<< HEAD
-		//noinspection OldTargetApi
-		targetSdkVersion 28
-=======
 		targetSdkVersion 30
->>>>>>> master_java_branch
 		versionCode 1
 		versionName "2.3.0.4"
 		archivesBaseName = "C-SampleApp"

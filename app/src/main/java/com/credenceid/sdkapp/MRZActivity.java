@@ -253,7 +253,6 @@ public class MRZActivity
 		mStatusTextView = findViewById(R.id.status_textview);
 
 		mICAOFaceImageView = findViewById(R.id.icao_dg2_imageview);
-		mICAOFingerImageView = findViewById(R.id.icao_dg3_imageview);
 		mICAOTextView = findViewById(R.id.icao_textview);
 
 		mOpenMRZButton = findViewById(R.id.open_mrz_button);

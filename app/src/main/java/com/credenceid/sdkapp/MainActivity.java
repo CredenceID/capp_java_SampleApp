@@ -64,7 +64,6 @@ public class MainActivity
     private ImageButton mFingerprintButton;
     private ImageButton mCardReaderButton;
     private ImageButton mMRZButton;
-    private ImageButton mIrisButton;
 
     /* --------------------------------------------------------------------------------------------
      *
@@ -101,7 +100,6 @@ public class MainActivity
         mFingerprintButton = findViewById(R.id.fingerprint_button);
         mCardReaderButton = findViewById(R.id.cardreader_button);
         mMRZButton = findViewById(R.id.mrz_button);
-        mIrisButton = findViewById(R.id.iris_button);
     }
 
     /* Configure all objects in layout file, set up listeners, views, etc. */
@@ -118,9 +116,6 @@ public class MainActivity
 
         mMRZButton.setOnClickListener((View v) ->
                 startActivity(new Intent(this, MRZActivity.class)));
-
-        mIrisButton.setOnClickListener((View v) ->
-                startActivity(new Intent(this, IrisActivity.class)));
 
         this.setBiometricButtonsVisibility(View.GONE);
     }
@@ -145,7 +140,7 @@ public class MainActivity
                                              String required_version) -> {
 
             if (OK == resultCode) {
-                Toast.makeText(this, getString(R.string.bio_init_pass), LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.bio_init), LENGTH_LONG).show();
 
                 App.DevFamily = App.BioManager.getDeviceFamily();
                 App.DevType = App.BioManager.getDeviceType();
@@ -165,7 +160,7 @@ public class MainActivity
                 /* This ResultCode is never returned for this API. */
 
             } else if (FAIL == resultCode) {
-                Toast.makeText(this, getString(R.string.bio_init_failed), LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.bio_init_fail), LENGTH_LONG).show();
 
                 /* If biometrics failed to initialize then all API calls will return FAIL.
                  * Application should not proceed & close itself.

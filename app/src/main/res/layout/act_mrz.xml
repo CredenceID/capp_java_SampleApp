@@ -9,7 +9,7 @@
 	android:orientation="vertical">
 
 	<TextView
-		android:id="@+id/statusTextView"
+		android:id="@+id/status_textview"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:layout_margin="10dp"
@@ -32,18 +32,7 @@
 			android:layout_weight="1" />
 
 		<ImageView
-			android:id="@+id/icaoDG2ImageView"
-			android:layout_width="240dp"
-			android:layout_height="320dp"
-			tools:ignore="ContentDescription" />
-
-		<View
-			android:layout_width="0dp"
-			android:layout_height="0dp"
-			android:layout_weight="1" />
-
-		<ImageView
-			android:id="@+id/icao_dg3_imageview"
+			android:id="@+id/icao_dg2_imageview"
 			android:layout_width="240dp"
 			android:layout_height="320dp"
 			tools:ignore="ContentDescription" />
@@ -54,7 +43,7 @@
 			android:layout_weight="1" />
 
 		<TextView
-			android:id="@+id/icaoTextView"
+			android:id="@+id/icao_textview"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" />
 
@@ -78,7 +67,7 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/openMRZBtn"
+			android:id="@+id/open_mrz_button"
 			style="@style/MRZActivityButton"
 			android:text="@string/open_mrz" />
 
@@ -88,7 +77,7 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/readICAOBtn"
+			android:id="@+id/read_icao_button"
 			style="@style/MRZActivityButton"
 			android:text="@string/read_icao_button_label" />
 
@@ -98,7 +87,7 @@
 			android:layout_weight="1" />
 
 		<Button
-			android:id="@+id/openEPassBtn"
+			android:id="@+id/open_epassport_buton"
 			style="@style/MRZActivityButton"
 			android:text="@string/open_epassport" />
 
