@@ -1,5 +1,21 @@
 package com.credenceid.sdkapp;
 
+import static android.Manifest.permission.CAMERA;
+import static android.Manifest.permission.READ_CONTACTS;
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.READ_PHONE_STATE;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static android.widget.Toast.LENGTH_LONG;
+import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
+import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
+import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
+import static com.credenceid.biometrics.DeviceType.CredenceECO_FC;
+import static com.credenceid.biometrics.DeviceType.CredenceTabV2_FC;
+import static com.credenceid.biometrics.DeviceType.CredenceTabV3_FM;
+import static com.credenceid.biometrics.DeviceType.CredenceTabV4_FCM;
+import static com.credenceid.biometrics.DeviceType.CredenceTwoR5_FC;
+
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.os.Build;
@@ -14,21 +30,6 @@ import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.BiometricsManager;
 import com.credenceid.biometrics.DeviceFamily;
 import com.credenceid.biometrics.DeviceType;
-
-import static android.Manifest.permission.CAMERA;
-import static android.Manifest.permission.READ_CONTACTS;
-import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
-import static android.Manifest.permission.READ_PHONE_STATE;
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static android.widget.Toast.LENGTH_LONG;
-import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
-import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
-import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
-import static com.credenceid.biometrics.DeviceType.CredenceTabV2_FC;
-import static com.credenceid.biometrics.DeviceType.CredenceTabV3_FM;
-import static com.credenceid.biometrics.DeviceType.CredenceTabV4_FCM;
-import static com.credenceid.biometrics.DeviceType.CredenceTwoR5_FC;
 //import static com.credenceid.biometrics.DeviceType.CredenceTwoV2_FC;
 
 @SuppressWarnings("StatementWithEmptyBody")
@@ -62,7 +63,6 @@ public class MainActivity
     private TextView mSDKAppVersionTextView;
     private ImageButton mFingerprintButton;
     private ImageButton mCardReaderButton;
-    private ImageButton mFaceButton;
     private ImageButton mMRZButton;
     private ImageButton mIrisButton;
 
@@ -100,7 +100,6 @@ public class MainActivity
 
         mFingerprintButton = findViewById(R.id.fingerprint_button);
         mCardReaderButton = findViewById(R.id.cardreader_button);
-        mFaceButton = findViewById(R.id.face_button);
         mMRZButton = findViewById(R.id.mrz_button);
         mIrisButton = findViewById(R.id.iris_button);
     }
@@ -116,9 +115,6 @@ public class MainActivity
 
         mCardReaderButton.setOnClickListener((View v) ->
                 startActivity(new Intent(this, CardReaderActivity.class)));
-
-        mFaceButton.setOnClickListener((View v) ->
-                startActivity(new Intent(this, CameraActivity.class)));
 
         mMRZButton.setOnClickListener((View v) ->
                 startActivity(new Intent(this, MRZActivity.class)));
@@ -191,12 +187,12 @@ public class MainActivity
 
         /* By default all Credence device's face a fingerprint sensor and camera. */
         mFingerprintButton.setVisibility(View.VISIBLE);
-        mFaceButton.setVisibility(View.VISIBLE);
 
-        /* Only these devices contain a card reader. */
-        if (CredenceTwoR5_FC == deviceType ||
-            CredenceTabV2_FC == deviceType ||
-                CredenceTabV4_FCM == deviceType) {
+    /* Only these devices contain a card reader. */
+    if (CredenceTwoR5_FC == deviceType
+        || CredenceECO_FC == deviceType
+        || CredenceTabV2_FC == deviceType
+        || CredenceTabV4_FCM == deviceType) {
 
             mCardReaderButton.setVisibility(View.VISIBLE);
         }
@@ -217,7 +213,6 @@ public class MainActivity
 
         mFingerprintButton.setVisibility(visibility);
         mCardReaderButton.setVisibility(visibility);
-        mFaceButton.setVisibility(visibility);
         mMRZButton.setVisibility(visibility);
     }
 
