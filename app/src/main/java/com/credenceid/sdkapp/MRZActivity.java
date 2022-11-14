@@ -310,7 +310,7 @@ public class MRZActivity
 				if(App.BioManager.getDeviceFamily() == DeviceFamily.CredenceTAB){
 					readICAODocument(mIdDocumentKey);
 				}else{
-					mIdDocumentKey = "P<FRAFERRATO<<MICHAEL<ALEXANDRE<<<<<<<<<<<<<\r\n19CE047823FRA8403249M2903264<<<<<<<<<<<<<<02";
+					mIdDocumentKey = "";
 					readICAODocument(mIdDocumentKey);
 				}
 			}
@@ -545,86 +545,6 @@ public class MRZActivity
 		mReadICAOButton.setEnabled(false);
 		mStatusTextView.setText(getString(R.string.reading));
 
-//		App.BioManager.readICAODocument(mrz,
-//				mSwPaceKey.isChecked(),
-//				mCbChipAuthentication.isChecked(),
-//				mCbTerminalAuthentication.isChecked(),
-//				(Biometrics.ResultCode resultCode,
-//				 ICAOReadIntermediateCode stage,
-//				 String hint,
-//				 ICAODocumentData data) -> {
-//
-//					Log.d(TAG, "STAGE: " + stage.name()
-//							+ ", Status: "
-//							+ resultCode.name()
-//							+ "Hint: " + hint);
-//					Log.d(TAG, "ICAODocumentData: " + data.toString());
-//
-//					mStatusTextView.setText("Finished reading stage: " + stage.name());
-//
-//					if (ICAOReadIntermediateCode.BAC == stage) {
-//						/* If on BAC stage and it FAILS, then reading is done.
-//						 * Re-enable button if:
-//						 *
-//						 * 1. Sensor is open.
-//						 * 2. MRZ data is valid.
-//						 * 3. Document is still present.
-//						 */
-//						if (FAIL == resultCode) {
-//							mStatusTextView.setText(getString(R.string.bac_failed));
-//
-//							mReadICAOButton.setEnabled(mIsEPassportOpen
-//									&& mHasMRZData
-//									&& mIsDocPresentOnEPassport);
-//						}
-//
-//					} else if (ICAOReadIntermediateCode.DG1 == stage) {
-//						Log.d(TAG, "DG1: Info received - resultCode = " + resultCode);
-//						if (OK == resultCode)
-//							mICAOTextView.setText("DG1:\n" + data.DG1.toString());
-//
-//					} else if (ICAOReadIntermediateCode.DG2 == stage) {
-//						Log.d(TAG, "DG2: Info received - resultCode = " + resultCode);
-//						if (OK == resultCode) {
-//							mICAOTextView.append("\nDG2:\n" + data.DG2.toString());
-//							mICAOFaceImageView.setImageBitmap(data.DG2.getFaceImage());
-//						}
-//
-//					} else if (ICAOReadIntermediateCode.DG3 == stage) {
-//						Log.d(TAG, "DG3: Info received - resultCode = " + resultCode);
-//						if (OK == resultCode) {
-//							if (data.DG3.getFingers().size() > 0) {
-//								Log.d(TAG, "DG3 File = " + data.DG3.getFingers().toString());
-//								mICAOTextView.append("DG3:\n"
-//										+ data.DG3.getFingers().get(0).getImageHeight()
-//								+ " x "
-//								+ data.DG3.getFingers().get(0).getImageWidth()
-//								+ " Image");
-//								//mICAOTextView.append("\nDG3: \nFinger : " + data.DG3.getFingers().get(0).getPosition());
-//								mICAOFingerImageView.setImageBitmap(data.DG3.getFingers().get(0).getBitmap()); ;
-//							} else {
-//								mICAOTextView.append("\nDG3: Parsing Finger info failure\n");
-//							}
-//						}
-//
-//					}  else if (ICAOReadIntermediateCode.DG12 == stage) {
-//						if (OK == resultCode)
-//							Log.d(TAG,"DG12" + data.DG12.toString());
-//
-//						mStatusTextView.setText(getString(R.string.icao_done));
-//
-//						/* Once this code is returned that means reading is finished.
-//						 * Re-enable button if:
-//						 *
-//						 * 1. Sensor is open.
-//						 * 2. MRZ data is valid.
-//						 * 3. Document is still present.
-//						 */
-//						mReadICAOButton.setEnabled(mIsEPassportOpen
-//								&& mHasMRZData
-//								&& mIsDocPresentOnEPassport);
-//					}
-//				});
 	}
 
 	void displayCanCodedialogBox(){
