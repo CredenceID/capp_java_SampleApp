@@ -4,33 +4,43 @@ apply plugin: 'kotlin-android'
 
 android {
 	buildToolsVersion '28.0.3'
-	compileSdkVersion 28
+	compileSdkVersion 30
 
 	defaultConfig {
 		applicationId "com.credenceid.sdkapp"
 		minSdkVersion 19
+<<<<<<< HEAD
 		//noinspection OldTargetApi
 		targetSdkVersion 28
+=======
+		targetSdkVersion 30
+>>>>>>> master_java_branch
 		versionCode 1
 		versionName "2.3.0.4"
 		archivesBaseName = "C-SampleApp"
 	}
 
 	signingConfigs {
-		defaultKey {
+		debug {
 			keyAlias 'CredenceIDPublicKey'
 			keyPassword 'CredenceID'
-			storeFile file('../../CredencePublicKeys/PublicKey.jks')
+			storeFile file('../../../CredencePublicKeys/PublicKey.jks')
+			storePassword 'CredenceID'
+		}
+		release {
+			keyAlias 'CredenceIDPublicKey'
+			keyPassword 'CredenceID'
+			storeFile file('../../../CredencePublicKeys/PublicKey.jks')
 			storePassword 'CredenceID'
 		}
 	}
 
 	buildTypes {
 		debug {
-			signingConfig signingConfigs.defaultKey
+			signingConfig signingConfigs.debug
 		}
 		release {
-			signingConfig signingConfigs.defaultKey
+			signingConfig signingConfigs.release
 			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
 		}
 	}

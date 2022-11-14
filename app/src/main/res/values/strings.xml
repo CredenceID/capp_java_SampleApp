@@ -66,6 +66,16 @@
 	<string name="open_epassport">Open EPassport</string>
 	<string name="close_epassport">Close EPassport</string>
 	<string name="read_icao_button_label">Read ICAO</string>
+<<<<<<< HEAD
+=======
+	<string name="chip_auth_checkbox_label">Perform Chip Authentication</string>
+	<string name="terminal_auth_checkbox_label">Perform Terminal Authentication</string>
+	<string name="PACE_Key_switch_label">PACE KEY Type</string>
+	<string name="PACE_Key_switch_on">CAN</string>
+	<string name="PACE_Key_switch_off">BAC</string>
+    <string name="load_certificates">Load Certificates</string>
+
+>>>>>>> master_java_branch
 	<string name="mrz_opening">Opening MRZ sensor…</string>
 	<string name="mrz_open_failed">Failed to open MRZ sensor.</string>
 	<string name="mrz_opened">MRZ sensor is open.</string>
