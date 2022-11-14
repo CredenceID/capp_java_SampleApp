@@ -17,13 +17,13 @@ android {
 		debug {
 			keyAlias 'CredenceIDPublicKey'
 			keyPassword 'CredenceID'
-			storeFile file('../../CredencePublicKeys/PublicKey.jks')
+			storeFile file('../../../CredencePublicKeys/PublicKey.jks')
 			storePassword 'CredenceID'
 		}
 		release {
 			keyAlias 'CredenceIDPublicKey'
 			keyPassword 'CredenceID'
-			storeFile file('../../CredencePublicKeys/PublicKey.jks')
+			storeFile file('../../../CredencePublicKeys/PublicKey.jks')
 			storePassword 'CredenceID'
 		}
 	}
@@ -51,7 +51,7 @@ android {
 }
 
 dependencies {
-	implementation fileTree(include: ['*.jar'], dir: 'libs')
 	implementation 'com.android.support:appcompat-v7:28.0.0'
 	implementation 'com.android.support:design:28.0.0'
+	implementation files('libs/capp_CredenceSDKJar-debug.aar')
 }

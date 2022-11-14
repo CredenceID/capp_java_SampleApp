@@ -605,7 +605,7 @@ public class CameraActivity
         /* Camera flash parameters do not work on TAB/TRIDENT devices. In order to use flash on
          * these devices you must use the Credence APIs.
          */
-        if (App.DevFamily == CredenceTAB || App.DevFamily == TridentOne || App.DevFamily == TridentTwo) {
+        if ( App.DevFamily == TridentOne || App.DevFamily == TridentTwo) {
             App.BioManager.cameraTorchEnable(useFlash);
         } else {
             try {
@@ -790,6 +790,7 @@ public class CameraActivity
             bm = Utils.rotateBitmap(bm, 90);
 
         /* Detect face on finalized Bitmap image. */
+        long start_time = System.currentTimeMillis();
         App.BioManager.detectFace(bm, (Biometrics.ResultCode resultCode,
                                        RectF rectF) -> {
             /* If camera was closed or preview stopped, immediately exit out. This is done so that
@@ -805,6 +806,7 @@ public class CameraActivity
                 /* Tell view that it will need to draw a detected face's Rect. region. */
                 mDrawingView.setHasFace(true);
 
+                Log.d(TAG, "Sample App detectFace time = " + (System.currentTimeMillis()-start_time));
                 /* If a CredenceTWO device then bounding Rect needs to be scaled to properly fit. */
                 if (CredenceTwo == App.DevFamily) {
                     mDrawingView.setFaceRect(rectF.left + 40,

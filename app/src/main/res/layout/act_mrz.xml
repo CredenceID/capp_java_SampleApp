@@ -166,6 +166,16 @@
 			android:layout_height="0dp"
 			android:layout_weight="1" />
 
+		<Button
+			android:id="@+id/load_certificates"
+			style="@style/MRZActivityButton"
+			android:text="@string/load_certificates" />
+
+		<View
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
 	</LinearLayout>
 
 </LinearLayout>

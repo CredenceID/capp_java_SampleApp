@@ -9,6 +9,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.face.FaceEngine;
@@ -17,6 +18,7 @@ import com.credenceid.sdkapp.util.FileUtils;
 
 import java.util.ArrayList;
 
+import static android.content.ContentValues.TAG;
 import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
 import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
 import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
@@ -123,6 +125,22 @@ public class FaceActivity
 				displayData += ("\nImage Quality: " + imageQuality);
 
 				message = displayData;
+
+				App.BioManager.createFaceTemplate(bitmap, new FaceEngine.OnCreateFaceTemplateListener() {
+					@Override
+					public void onCreateFaceTemplate(Biometrics.ResultCode resultCode, byte[] bytes) {
+						if (OK == resultCode) {
+
+							Log.d(TAG,"Face Template Size = " + bytes.length);
+
+						} else if (INTERMEDIATE == resultCode) {
+							/* This code is never returned here. */
+
+						} else if (FAIL == resultCode) {
+							Log.d(TAG,"Face Template creation failed ");
+						}
+					}
+				});
 
 			} else if (INTERMEDIATE == resultCode) {
 				/* This code is never returned here. */

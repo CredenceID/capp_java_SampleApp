@@ -12,13 +12,13 @@ import com.credenceid.biometrics.DeviceType;
 public class App
 	extends Application {
 
-	public static final String SDCARD_PATH = Environment.getExternalStorageDirectory() + "/";
+		public static final String SDCARD_PATH = Environment.getExternalStorageDirectory() + "/";
 
-	/* CredenceSDK biometrics object used to interface with APIs. */
-	public static BiometricsManager BioManager;
-	/* Stores which Credence family of device's this app is running on. */
-	public static DeviceFamily DevFamily = DeviceFamily.InvalidDevice;
-	/* Stores which specific device this app is running on. */
-	public static DeviceType DevType = DeviceType.InvalidDevice;
+		/* CredenceSDK biometrics object used to interface with APIs. */
+		public static BiometricsManager BioManager;
+		/* Stores which Credence family of device's this app is running on. */
+		public static DeviceFamily DevFamily = DeviceFamily.InvalidDevice;
+		/* Stores which specific device this app is running on. */
+		public static DeviceType DevType = DeviceType.InvalidDevice;
 
 }

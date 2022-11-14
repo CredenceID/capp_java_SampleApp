@@ -1,11 +1,11 @@
 package com.credenceid.sdkapp;
 
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -16,21 +16,17 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.credenceid.biometrics.Biometrics;
 import com.credenceid.biometrics.Biometrics.CloseReasonCode;
-import com.credenceid.biometrics.Biometrics.EPassportReaderStatusListener;
-import com.credenceid.biometrics.Biometrics.MRZStatusListener;
-import com.credenceid.biometrics.Biometrics.OnEPassportStatusListener;
-import com.credenceid.biometrics.Biometrics.OnMRZDocumentStatusListener;
-import com.credenceid.biometrics.Biometrics.OnMRZReaderListener;
 import com.credenceid.biometrics.Biometrics.ResultCode;
+import com.credenceid.biometrics.DeviceFamily;
 import com.credenceid.icao.ICAODocumentData;
 import com.credenceid.icao.ICAOReadIntermediateCode;
 
 import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
 import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
 import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
+
 
 @SuppressWarnings({"unused", "StatementWithEmptyBody"})
 public class MRZActivity
@@ -75,6 +71,7 @@ public class MRZActivity
 	private TextView mICAOTextView;
 	private Button mOpenMRZButton;
 	private Button mOpenRFButton;
+    private Button mLoadCertificatesButton;
 	private Switch mSwPaceKey;
 	private CheckBox mCbChipAuthentication;
 	private CheckBox mCbTerminalAuthentication;
@@ -92,6 +89,7 @@ public class MRZActivity
 	private boolean mIsEPassportOpen = false;
 	private boolean mHasMRZData = false;
 	private boolean mIsDocPresentOnEPassport = false;
+	private boolean mIsMrzByCameraEngineInitialized = false;
 
 	private String mDocNumber = "";
 	private String mDateOfBirth = "";
@@ -99,11 +97,11 @@ public class MRZActivity
 	private String mIdDocumentKey = "";
 
 	/* Callback invoked each time MRZ reader is able to read MRZ text from document. */
-	private OnMRZReaderListener mOnMRZReadListener = (ResultCode resultCode,
-													  String hint,
-													  byte[] rawData,
-													  String data,
-													  String parsedData) -> {
+	private Biometrics.OnMRZReaderListener mOnMRZReadListener = (ResultCode resultCode,
+																 String hint,
+																 byte[] rawData,
+																 String data,
+																 String parsedData) -> {
 
 		if (OK == resultCode) {
 			/* Once data is read, it is auto parsed and returned as one big string of data. */
@@ -164,7 +162,7 @@ public class MRZActivity
 	};
 
 	/* Callback invoked each time C-Service detects a document change from MRZ reader. */
-	private OnMRZDocumentStatusListener mOnMrzDocumentStatusListener
+	private Biometrics.OnMRZDocumentStatusListener mOnMrzDocumentStatusListener
 			= (int previousState, int currentState) -> {
 
 		/* If currentState is not 2, then no document is present. */
@@ -182,7 +180,7 @@ public class MRZActivity
 	};
 
 	/* Callback invoked each time sensor detects a document change from EPassport reader. */
-	private OnEPassportStatusListener mOnEPassportCardStatusListener
+	private Biometrics.OnEPassportStatusListener mOnEPassportCardStatusListener
 			= (int previousState, int currentState) -> {
 
 		/* If currentState is not 2, then no document is present. */
@@ -264,6 +262,7 @@ public class MRZActivity
 		mCbChipAuthentication = findViewById(R.id.checkBoxChipAuthnetication);
 		mCbTerminalAuthentication = findViewById(R.id.checkBoxTerminalAuthentication);
 		mSwPaceKey = findViewById(R.id.switchPaceKey);
+        mLoadCertificatesButton = findViewById(R.id.load_certificates);
 	}
 
 	/* Configure all objects in layout file, set up listeners, views, etc. */
@@ -273,25 +272,35 @@ public class MRZActivity
 		mOpenMRZButton.setEnabled(true);
 		mOpenMRZButton.setText(getString(R.string.open_mrz));
 		mOpenMRZButton.setOnClickListener((View v) -> {
-			/* Based on current state of MRZ reader take appropriate action. */
-			if (!mIsMRZOpen) {
-				openMRZReader();
-				mICAOTextView.setText("");
-				mICAOFaceImageView.setImageBitmap(null);
-				mICAOFingerImageView.setImageBitmap(null);
-			}
-			else {
-				App.BioManager.closeMRZ();
-				App.BioManager.ePassportCloseCommand();
+			if(DeviceFamily.CredenceTwo == App.BioManager.getDeviceFamily()){
+				//TODO add C-CAMERA here
+
+			} else {
+				/* Based on current state of MRZ reader take appropriate action. */
+				if (!mIsMRZOpen) {
+					openMRZReader();
+					mICAOTextView.setText("");
+					mICAOFaceImageView.setImageBitmap(null);
+					mICAOFingerImageView.setImageBitmap(null);
+				} else {
+					App.BioManager.closeMRZ();
+					App.BioManager.ePassportCloseCommand();
+				}
 			}
 		});
 
 		mOpenRFButton.setText(getString(R.string.open_epassport));
 		mOpenRFButton.setOnClickListener((View v) -> {
-			/* Based on current state of EPassport reader take appropriate action. */
-			if (!mIsEPassportOpen)
-				openEPassportReader();
-			else App.BioManager.ePassportCloseCommand();
+			if(App.BioManager.getDeviceFamily() == DeviceFamily.CredenceTwo){
+				if (mIsEPassportOpen)
+					App.BioManager.cardCloseCommand();
+				else this.openCtwoCardReader();
+			} else {
+				/* Based on current state of EPassport reader take appropriate action. */
+				if (!mIsEPassportOpen)
+					openEPassportReader();
+				else App.BioManager.ePassportCloseCommand();
+			}
 		});
 
 		mReadICAOButton.setEnabled(mIsDocPresentOnEPassport);
@@ -299,10 +308,20 @@ public class MRZActivity
 			if(mSwPaceKey.isChecked()) {
 				displayCanCodedialogBox();
 			} else {
-				readICAODocument(mIdDocumentKey);
+				if(App.BioManager.getDeviceFamily() == DeviceFamily.CredenceTAB){
+					readICAODocument(mIdDocumentKey);
+				}else{
+					mIdDocumentKey = "P<FRAFERRATO<<MICHAEL<ALEXANDRE<<<<<<<<<<<<<\r\n19CE047823FRA8403249M2903264<<<<<<<<<<<<<<02";
+					readICAODocument(mIdDocumentKey);
+				}
 			}
 
 		});
+
+		mLoadCertificatesButton.setOnClickListener((View v) -> {
+			displayCertificatesdialogBox();
+        });
+
 	}
 
 	/* --------------------------------------------------------------------------------------------
@@ -324,7 +343,7 @@ public class MRZActivity
 		App.BioManager.registerMRZDocumentStatusListener(mOnMrzDocumentStatusListener);
 
 		/* Once our callback is registered we may now open the reader. */
-		App.BioManager.openMRZ(new MRZStatusListener() {
+		App.BioManager.openMRZ(new Biometrics.MRZStatusListener() {
 			@Override
 			public void
 			onMRZOpen(ResultCode resultCode) {
@@ -389,7 +408,7 @@ public class MRZActivity
 		App.BioManager.registerEPassportStatusListener(mOnEPassportCardStatusListener);
 
 		/* Once our callback is registered we may now open the reader. */
-		App.BioManager.ePassportOpenCommand(new EPassportReaderStatusListener() {
+		App.BioManager.ePassportOpenCommand(new Biometrics.EPassportReaderStatusListener() {
 			@Override
 			public void
 			onEPassportReaderOpen(ResultCode resultCode) {
@@ -441,6 +460,60 @@ public class MRZActivity
 					mStatusTextView.setText(getString(R.string.mrz_failed_close));
 				}
 			}
+
+		});
+	}
+
+	/* Calls Credence APIs to open card reader. */
+	private void
+	openCtwoCardReader() {
+
+		/* Let user know card reader will now try to be opened. */
+		mStatusTextView.setText(getString(R.string.opening_card_reader));
+
+		App.BioManager.cardOpenCommand(new Biometrics.CardReaderStatusListener() {
+			@Override
+			public void
+			onCardReaderOpen(ResultCode resultCode) {
+
+				if (OK == resultCode) {
+					mIsEPassportOpen = true;
+					mReadICAOButton.setEnabled(true);
+					mOpenRFButton.setText(getString(R.string.close_epassport));
+					mStatusTextView.setText(getString(R.string.epassport_opened));
+
+				} else if (INTERMEDIATE == resultCode) {
+					/* This code is never returned here. */
+
+				} else if (FAIL == resultCode) {
+					mStatusTextView.setText("Fail to open RFID reader");
+				}
+			}
+
+			@SuppressLint("SetTextI18n")
+			@Override
+			public void
+			onCardReaderClosed(ResultCode resultCode,
+							   CloseReasonCode closeReasonCode) {
+
+				if (OK == resultCode) {
+					/* Now that sensor is open, if user presses "mOpenRFButton" sensor should now
+					 * close. To achieve this we change flag which controls what action button takes.
+					 */
+					mIsEPassportOpen = false;
+
+					mReadICAOButton.setEnabled(false);
+					mOpenRFButton.setEnabled(true);
+					mOpenRFButton.setText(getString(R.string.open_epassport));
+					mStatusTextView.setText(getString(R.string.epassport_closed));
+
+				} else if (INTERMEDIATE == resultCode) {
+					/* This code is never returned here. */
+
+				} else if (FAIL == resultCode) {
+					mStatusTextView.setText("Fail to close RFID reader");
+				}
+			}
 		});
 	}
 
@@ -473,99 +546,91 @@ public class MRZActivity
 		mReadICAOButton.setEnabled(false);
 		mStatusTextView.setText(getString(R.string.reading));
 
-		App.BioManager.readICAODocument(mrz,
-				mSwPaceKey.isChecked(),
-				mCbChipAuthentication.isChecked(),
-				mCbTerminalAuthentication.isChecked(),
-				(Biometrics.ResultCode resultCode,
-				 ICAOReadIntermediateCode stage,
-				 String hint,
-				 ICAODocumentData data) -> {
-
-					Log.d(TAG, "STAGE: " + stage.name()
-							+ ", Status: "
-							+ resultCode.name()
-							+ "Hint: " + hint);
-					Log.d(TAG, "ICAODocumentData: " + data.toString());
-
-					mStatusTextView.setText("Finished reading stage: " + stage.name());
-
-					if (ICAOReadIntermediateCode.BAC == stage) {
-						/* If on BAC stage and it FAILS, then reading is done.
-						 * Re-enable button if:
-						 *
-						 * 1. Sensor is open.
-						 * 2. MRZ data is valid.
-						 * 3. Document is still present.
-						 */
-						if (FAIL == resultCode) {
-							mStatusTextView.setText(getString(R.string.bac_failed));
-
-							mReadICAOButton.setEnabled(mIsEPassportOpen
-									&& mHasMRZData
-									&& mIsDocPresentOnEPassport);
-						}
-
-					} else if (ICAOReadIntermediateCode.DG1 == stage) {
-						Log.d(TAG, "DG1: Info received - resultCode = " + resultCode);
-						if (OK == resultCode)
-							mICAOTextView.setText("DG1:\n" + data.DG1.toString());
-
-					} else if (ICAOReadIntermediateCode.DG2 == stage) {
-						Log.d(TAG, "DG2: Info received - resultCode = " + resultCode);
-						if (OK == resultCode) {
-							mICAOTextView.append("\nDG2:\n" + data.DG2.toString());
-							mICAOFaceImageView.setImageBitmap(data.DG2.getFaceImage());
-						}
-
-					} else if (ICAOReadIntermediateCode.DG3 == stage) {
-						Log.d(TAG, "DG3: Info received - resultCode = " + resultCode);
-						if (OK == resultCode) {
-							if (data.DG3.getFingers().size() > 0) {
-								Log.d(TAG, "DG3 File = " + data.DG3.getFingers().toString());
-								mICAOTextView.append("DG3:\n"
-										+ data.DG3.getFingers().get(0).getImageHeight()
-								+ " x "
-								+ data.DG3.getFingers().get(0).getImageWidth()
-								+ " Image");
-								//mICAOTextView.append("\nDG3: \nFinger : " + data.DG3.getFingers().get(0).getPosition());
-								mICAOFingerImageView.setImageBitmap(data.DG3.getFingers().get(0).getBitmap()); ;
-							} else {
-								mICAOTextView.append("\nDG3: Parsing Finger info failure\n");
-							}
-						}
-
-					} else if (ICAOReadIntermediateCode.DG7 == stage) {
-						if (OK == resultCode)
-							mICAOTextView.setText(data.DG7.toString());
-
-					} else if (ICAOReadIntermediateCode.DG11 == stage) {
-						if (OK == resultCode)
-							mICAOTextView.setText(data.DG1.toString());
-
-					} else if (ICAOReadIntermediateCode.DG12 == stage) {
-						if (OK == resultCode)
-							mICAOTextView.setText(data.DG12.toString());
-
-						mStatusTextView.setText(getString(R.string.icao_done));
-
-						/* Once this code is returned that means reading is finished.
-						 * Re-enable button if:
-						 *
-						 * 1. Sensor is open.
-						 * 2. MRZ data is valid.
-						 * 3. Document is still present.
-						 */
-						mReadICAOButton.setEnabled(mIsEPassportOpen
-								&& mHasMRZData
-								&& mIsDocPresentOnEPassport);
-					}
-				});
+//		App.BioManager.readICAODocument(mrz,
+//				mSwPaceKey.isChecked(),
+//				mCbChipAuthentication.isChecked(),
+//				mCbTerminalAuthentication.isChecked(),
+//				(Biometrics.ResultCode resultCode,
+//				 ICAOReadIntermediateCode stage,
+//				 String hint,
+//				 ICAODocumentData data) -> {
+//
+//					Log.d(TAG, "STAGE: " + stage.name()
+//							+ ", Status: "
+//							+ resultCode.name()
+//							+ "Hint: " + hint);
+//					Log.d(TAG, "ICAODocumentData: " + data.toString());
+//
+//					mStatusTextView.setText("Finished reading stage: " + stage.name());
+//
+//					if (ICAOReadIntermediateCode.BAC == stage) {
+//						/* If on BAC stage and it FAILS, then reading is done.
+//						 * Re-enable button if:
+//						 *
+//						 * 1. Sensor is open.
+//						 * 2. MRZ data is valid.
+//						 * 3. Document is still present.
+//						 */
+//						if (FAIL == resultCode) {
+//							mStatusTextView.setText(getString(R.string.bac_failed));
+//
+//							mReadICAOButton.setEnabled(mIsEPassportOpen
+//									&& mHasMRZData
+//									&& mIsDocPresentOnEPassport);
+//						}
+//
+//					} else if (ICAOReadIntermediateCode.DG1 == stage) {
+//						Log.d(TAG, "DG1: Info received - resultCode = " + resultCode);
+//						if (OK == resultCode)
+//							mICAOTextView.setText("DG1:\n" + data.DG1.toString());
+//
+//					} else if (ICAOReadIntermediateCode.DG2 == stage) {
+//						Log.d(TAG, "DG2: Info received - resultCode = " + resultCode);
+//						if (OK == resultCode) {
+//							mICAOTextView.append("\nDG2:\n" + data.DG2.toString());
+//							mICAOFaceImageView.setImageBitmap(data.DG2.getFaceImage());
+//						}
+//
+//					} else if (ICAOReadIntermediateCode.DG3 == stage) {
+//						Log.d(TAG, "DG3: Info received - resultCode = " + resultCode);
+//						if (OK == resultCode) {
+//							if (data.DG3.getFingers().size() > 0) {
+//								Log.d(TAG, "DG3 File = " + data.DG3.getFingers().toString());
+//								mICAOTextView.append("DG3:\n"
+//										+ data.DG3.getFingers().get(0).getImageHeight()
+//								+ " x "
+//								+ data.DG3.getFingers().get(0).getImageWidth()
+//								+ " Image");
+//								//mICAOTextView.append("\nDG3: \nFinger : " + data.DG3.getFingers().get(0).getPosition());
+//								mICAOFingerImageView.setImageBitmap(data.DG3.getFingers().get(0).getBitmap()); ;
+//							} else {
+//								mICAOTextView.append("\nDG3: Parsing Finger info failure\n");
+//							}
+//						}
+//
+//					}  else if (ICAOReadIntermediateCode.DG12 == stage) {
+//						if (OK == resultCode)
+//							Log.d(TAG,"DG12" + data.DG12.toString());
+//
+//						mStatusTextView.setText(getString(R.string.icao_done));
+//
+//						/* Once this code is returned that means reading is finished.
+//						 * Re-enable button if:
+//						 *
+//						 * 1. Sensor is open.
+//						 * 2. MRZ data is valid.
+//						 * 3. Document is still present.
+//						 */
+//						mReadICAOButton.setEnabled(mIsEPassportOpen
+//								&& mHasMRZData
+//								&& mIsDocPresentOnEPassport);
+//					}
+//				});
 	}
 
 	void displayCanCodedialogBox(){
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle("Title");
+		builder.setTitle("ENTER KEY");
 
 		// Set up the input
 		final EditText input = new EditText(this);
@@ -591,4 +656,44 @@ public class MRZActivity
 
 		builder.show();
 	}
+
+	private void setTACredenetials(String cvcaCertificates,
+                                   String dvCertificates,
+                                   String isCertificate,
+                                   String isKey){
+//	    App.BioManager.setLocalTACredentials(cvcaCertificates,
+//                dvCertificates,
+//                isCertificate,
+//                isKey);
+    }
+
+    void displayCertificatesdialogBox(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Here is he certificates location :");
+
+        String EAC_PATH = Environment.getExternalStorageDirectory().toString() + "/MRTD/EAC_Files/EAC_CREDENCE_01/";
+        String CERT_CVCA_PATH = EAC_PATH + "certificates/CVCA/";
+        String CERT_DV_PATH = EAC_PATH + "certificates/DV/";
+        String CERT_IS_PATH = EAC_PATH + "certificates/IS/";
+        String KEYS_EAC_PATH = EAC_PATH + "keys/";
+
+        final TextView certificatesLocations = new TextView(this);
+        certificatesLocations.setText("CVCA certificate: " + CERT_CVCA_PATH + "\n"
+                +"DV certificate: " + CERT_DV_PATH + "\n"
+                +"IS certificate: " + CERT_IS_PATH + "\n"
+                +"IS key: " + KEYS_EAC_PATH);
+        builder.setView(certificatesLocations);
+
+        // Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                setTACredenetials(CERT_CVCA_PATH,
+                        CERT_DV_PATH,
+                        CERT_IS_PATH,
+                        KEYS_EAC_PATH);
+            }
+        });
+        builder.show();
+    }
 }

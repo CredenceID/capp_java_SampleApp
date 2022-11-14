@@ -3,8 +3,10 @@ package com.credenceid.sdkapp;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -15,8 +17,16 @@ import com.credenceid.biometrics.Biometrics.CloseReasonCode;
 import com.credenceid.biometrics.Biometrics.OnFingerprintGrabbedWSQListener;
 import com.credenceid.biometrics.Biometrics.ResultCode;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
+import static android.content.ContentValues.TAG;
+import static com.credenceid.biometrics.Biometrics.FMDFormat.ANSI_378_2004;
 import static com.credenceid.biometrics.Biometrics.FMDFormat.ISO_19794_2_2005;
 import static com.credenceid.biometrics.Biometrics.ResultCode.FAIL;
 import static com.credenceid.biometrics.Biometrics.ResultCode.INTERMEDIATE;
@@ -61,6 +71,9 @@ public class FingerprintActivity
     /* Stores FMD templates (used for fingerprint matching) for each fingerprint. */
     private byte[] mFingerprintOneFMDTemplate = null;
     private byte[] mFingerprintTwoFMDTemplate = null;
+    private String mWsqFileFp1;
+    private byte[] mFingerprintOneFMDTemplateFromWsq = null;
+    private Biometrics.FMDFormat mTemplatesFMDFormat = ISO_19794_2_2005;
 
     /* --------------------------------------------------------------------------------------------
      *
@@ -208,7 +221,7 @@ public class FingerprintActivity
 
         /* Only allow capture once fingerprint is open. */
         /* Only allow match once both fingerprints have been captured. */
-        this.setCaptureMatchButtonEnable(false);
+        this.setCaptureMatchButtonEnable(true);
 
         mFingerprintOneImageView.setOnClickListener((View v) -> {
             /* This ImageView should turn green since it was selected. */
@@ -254,7 +267,13 @@ public class FingerprintActivity
 
         mMatchButton.setOnClickListener((View v) -> {
             this.setAllComponentEnable(false);
-            this.matchFMDTemplates(mFingerprintOneFMDTemplate, mFingerprintTwoFMDTemplate);
+            try {
+                mFingerprintOneFMDTemplate = readFile("thumbRight2.ist");
+                mFingerprintTwoFMDTemplate = readFile("thumbRight.ist");
+                this.matchFMDTemplates(mFingerprintOneFMDTemplate, mFingerprintTwoFMDTemplate);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
     }
 
@@ -324,11 +343,19 @@ public class FingerprintActivity
                     if (null != bitmap)
                         mFingerprintOneImageView.setImageBitmap(bitmap);
 
-                    mStatusTextView.setText("WSQ File: " + wsqFilepath);
+                    mStatusTextView.setText("Image File: " + filepath
+                            + "\nWSQ File: " + wsqFilepath);
                     mInfoTextView.setText("Quality: " + nfiqScore);
 
                     /* Create template from fingerprint image. */
                     createFMDTemplate(bitmap);
+
+                    mWsqFileFp1 = wsqFilepath;
+
+                    testCompressToWSQ(filepath);
+                    testDecompressWSQ(wsqFilepath);
+
+
                 }
                 /* This code is returned on every new frame/image from sensor. */
                 else if (INTERMEDIATE == resultCode) {
@@ -358,6 +385,45 @@ public class FingerprintActivity
         });
     }
 
+
+    private void testCompressToWSQ(String filepath) {
+
+        App.BioManager.compressToWSQ(filepath, 0.75F, new Biometrics.OnCompressToWSQListener() {
+            @Override
+            public void onConvertToWsq(ResultCode resultCode, String s) {
+                if (OK == resultCode) {
+                    Log.d(TAG, "compressWSQ OK");
+                    Log.d(TAG, "Result = " + s);
+                } else if (FAIL == resultCode) {
+                    Log.e(TAG, "Fail to compressWSQ");
+                }
+            }
+        });
+    }
+
+    private void testDecompressWSQ(String filepath) {
+
+        App.BioManager.decompressWSQ(filepath, new Biometrics.OnDecompressWSQListener() {
+            @Override
+            public void onDecompressWsq(ResultCode resultCode, byte[] bytes) {
+
+                if (OK == resultCode) {
+                    Log.d(TAG, "decompressWSQ OK");
+                    Bitmap image = BitmapFactory.decodeByteArray(bytes,0 , bytes.length);
+                    try (FileOutputStream out = new FileOutputStream("/sdcard/createdBitmapFromWsq.png")) {
+                        image.compress(Bitmap.CompressFormat.PNG, 100, out);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+
+                } else if (FAIL == resultCode) {
+                    Log.e(TAG, "Fail to compressWSQ");
+                }
+            }
+        });
+    }
+
     /* Make CredenceSDK API calls to capture "second" fingerprint. This is fingerprint image on
      * right side of layout file.
      */
@@ -365,6 +431,7 @@ public class FingerprintActivity
     captureFingerprintTwo() {
 
         mFingerprintTwoFMDTemplate = null;
+
 
         App.BioManager.grabFingerprint(mScanTypes[0], new Biometrics.OnFingerprintGrabbedListener() {
             @Override
@@ -386,6 +453,7 @@ public class FingerprintActivity
 
                     /* Create template from fingerprint image. */
                     createFMDTemplate(bitmap);
+
                 }
                 /* This code is returned on every new frame/image from sensor. */
                 else if (INTERMEDIATE == resultCode) {
@@ -422,12 +490,50 @@ public class FingerprintActivity
      */
     @SuppressLint("SetTextI18n")
     private void
+    createFMDTemplateFromWsq(byte[] wsqImage) {
+
+        /* Keep a track of how long it takes for FMD creation. */
+        final long startTime = SystemClock.elapsedRealtime();
+
+        App.BioManager.convertToFMD(wsqImage, mTemplatesFMDFormat, (ResultCode resultCode,
+                                                               byte[] bytes) -> {
+
+            if (OK == resultCode) {
+                /* Display how long it took for FMD template to be created. */
+                final double durationInSeconds = (SystemClock.elapsedRealtime() - startTime) / 1000.0;
+                mInfoTextView.append("\nCreated FMD template from WSQ in: " + durationInSeconds + " seconds.");
+
+                if (mCaptureFingerprintOne)
+                    mFingerprintOneFMDTemplateFromWsq = Arrays.copyOf(bytes, bytes.length);
+
+                /* If both templates have been created then enable Match button. */
+                if (mFingerprintOneFMDTemplateFromWsq != null && mFingerprintTwoFMDTemplate != null)
+                    mMatchButton.setEnabled(true);
+
+            } else if (INTERMEDIATE == resultCode) {
+                /* This code is never returned here. */
+
+            } else if (FAIL == resultCode) {
+                mStatusTextView.append("\nFailed to create FMD template from WSQ.");
+            }
+
+            setAllComponentEnable(true);
+        });
+    }
+
+    /* Attempts to create a FMD template from given Bitmap image. If successful it saves FMD to
+     * respective fingerprint template array.
+     *
+     * @param bitmap
+     */
+    @SuppressLint("SetTextI18n")
+    private void
     createFMDTemplate(Bitmap bitmap) {
 
         /* Keep a track of how long it takes for FMD creation. */
         final long startTime = SystemClock.elapsedRealtime();
 
-        App.BioManager.convertToFMD(bitmap, ISO_19794_2_2005, (ResultCode resultCode,
+        App.BioManager.convertToFMD(bitmap, mTemplatesFMDFormat, (ResultCode resultCode,
                                                                byte[] bytes) -> {
 
             if (OK == resultCode) {
@@ -435,8 +541,24 @@ public class FingerprintActivity
                 final double durationInSeconds = (SystemClock.elapsedRealtime() - startTime) / 1000.0;
                 mInfoTextView.setText("Created FMD template in: " + durationInSeconds + " seconds.");
 
-                if (mCaptureFingerprintOne)
+                if (mCaptureFingerprintOne) {
                     mFingerprintOneFMDTemplate = Arrays.copyOf(bytes, bytes.length);
+
+                    try {
+                        File wsqFile = new File(mWsqFileFp1);
+                        byte[] wsqFileBytes = new byte[(int)wsqFile.length()];
+                        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(wsqFile));
+                        buf.read(wsqFileBytes, 0, wsqFileBytes.length);
+                        buf.close();
+                        createFMDTemplateFromWsq(wsqFileBytes);
+                    } catch (FileNotFoundException e) {
+                        Log.e(TAG,"Credence - error = " + e.toString());
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        Log.e(TAG,"Credence - error = " + e.toString());
+                        e.printStackTrace();
+                    }
+                }
                 else mFingerprintTwoFMDTemplate = Arrays.copyOf(bytes, bytes.length);
 
                 /* If both templates have been created then enable Match button. */
@@ -467,17 +589,19 @@ public class FingerprintActivity
         /* Normally one would handle parameter checking, but this API handles it for us. Meaning
          * that if any FMD is invalid it will return the proper score of 0, etc.
          */
-        App.BioManager.compareFMD(templateOne, templateTwo, ISO_19794_2_2005,
+        App.BioManager.compareFMD(templateOne, templateTwo, mTemplatesFMDFormat,
                 (ResultCode resultCode, float dissimilarity) -> {
 
                     if (OK == resultCode) {
                         String matchDecision = "No Match";
                         /* This is how to properly determine a match or not. */
-                        if (dissimilarity < (Integer.MAX_VALUE / 1000000))
+                        if (dissimilarity > 95)
                             matchDecision = "Match";
 
                         mStatusTextView.setText("Matching complete.");
                         mInfoTextView.setText("Match outcome: " + matchDecision);
+
+                        this.matchFMDTemplatesFromWsq(mFingerprintOneFMDTemplateFromWsq, mFingerprintTwoFMDTemplate);
 
                     } else if (INTERMEDIATE == resultCode) {
                         /* This API will never return ResultCode.INTERMEDIATE. */
@@ -490,5 +614,71 @@ public class FingerprintActivity
                     /* Re-enable all components since operation is now complete. */
                     this.setAllComponentEnable(true);
                 });
+    }
+
+    /* Matches two FMD templates and displays score.
+     *
+     * @param templateOne FMD template.
+     * @param templateTwo FMD template to match against.
+     */
+    @SuppressLint("SetTextI18n")
+    private void
+    matchFMDTemplatesFromWsq(byte[] templateOne,
+                      byte[] templateTwo) {
+
+        /* Normally one would handle parameter checking, but this API handles it for us. Meaning
+         * that if any FMD is invalid it will return the proper score of 0, etc.
+         */
+        App.BioManager.compareFMD(templateOne, templateTwo, mTemplatesFMDFormat,
+                (ResultCode resultCode, float dissimilarity) -> {
+
+                    if (OK == resultCode) {
+                        String matchDecision = "WSQ: No Match";
+                        /* This is how to properly determine a match or not. */
+                        if (dissimilarity > 95)
+                            matchDecision = "WSQ: Match";
+
+                        mStatusTextView.append("\nWSQ Matching complete.");
+                        mInfoTextView.append("\nWSQ Match outcome: " + matchDecision);
+
+                    } else if (INTERMEDIATE == resultCode) {
+                        /* This API will never return ResultCode.INTERMEDIATE. */
+
+                    } else if (FAIL == resultCode) {
+                        mStatusTextView.setText("\nWSQ Failed to compare templates.");
+                        mInfoTextView.setText("");
+                    }
+
+                    /* Re-enable all components since operation is now complete. */
+                    this.setAllComponentEnable(true);
+                });
+    }
+
+    public byte[] readFile(String fileName) throws IOException {
+
+        String outputPath =  "";
+        byte[] dataRead = null;
+
+        File[] externalStorageVolumes = getApplicationContext().getExternalFilesDirs("");
+        if(null != externalStorageVolumes) {
+            if(null != externalStorageVolumes[0]) {
+                outputPath = externalStorageVolumes[0].getAbsolutePath() + "/" + fileName;
+                FileInputStream inputStream = null;
+                BufferedInputStream bin = null;
+                try {
+                    File file = new File(outputPath);
+                    dataRead = new byte[(int)file.length()];
+                    inputStream = new FileInputStream(outputPath);
+                    bin = new BufferedInputStream(inputStream, 1000);
+                    bin.read(dataRead, 0, dataRead.length);
+                } finally {
+                    if (bin != null) {
+                        bin.close();
+                    }
+                }
+            }
+        }
+        return dataRead;
+
     }
 }

@@ -28,7 +28,8 @@ import static com.credenceid.biometrics.Biometrics.ResultCode.OK;
 import static com.credenceid.biometrics.DeviceType.CredenceTabV2_FC;
 import static com.credenceid.biometrics.DeviceType.CredenceTabV3_FM;
 import static com.credenceid.biometrics.DeviceType.CredenceTabV4_FCM;
-import static com.credenceid.biometrics.DeviceType.CredenceTwoV2_FC;
+import static com.credenceid.biometrics.DeviceType.CredenceTwoR5_FC;
+//import static com.credenceid.biometrics.DeviceType.CredenceTwoV2_FC;
 
 @SuppressWarnings("StatementWithEmptyBody")
 public class MainActivity
@@ -193,15 +194,17 @@ public class MainActivity
         mFaceButton.setVisibility(View.VISIBLE);
 
         /* Only these devices contain a card reader. */
-        if (CredenceTwoV2_FC == deviceType ||
-                CredenceTabV2_FC == deviceType ||
+        if (CredenceTwoR5_FC == deviceType ||
+            CredenceTabV2_FC == deviceType ||
                 CredenceTabV4_FCM == deviceType) {
 
             mCardReaderButton.setVisibility(View.VISIBLE);
         }
 
         /* Only these devices contain a MRZ reader. */
-        if (CredenceTabV3_FM == deviceType || CredenceTabV4_FCM == deviceType)
+        //if (CredenceTwoV2_FC == deviceType ||
+        if (      CredenceTabV3_FM == deviceType ||
+                CredenceTabV4_FCM == deviceType)
             mMRZButton.setVisibility(View.VISIBLE);
     }
 
@@ -223,7 +226,7 @@ public class MainActivity
     requestPermissions() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED
+            if (PERMISSION_GRANTED != checkSelfPermission(WRITE_EXTERNAL_STORAGE)
                     || checkSelfPermission(READ_EXTERNAL_STORAGE) != PERMISSION_GRANTED
                     || checkSelfPermission(CAMERA) != PERMISSION_GRANTED
                     || checkSelfPermission(READ_CONTACTS) != PERMISSION_GRANTED
